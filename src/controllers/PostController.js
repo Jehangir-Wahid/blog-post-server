@@ -1,0 +1,290 @@
+const mongoose = require("mongoose");
+const logger = require("../helpers/logger");
+const { ValidatePost } = require("../helpers/validations");
+const Post = mongoose.model("Post");
+const User = mongoose.model("User");
+const Fan = mongoose.model("Fan");
+const {
+    ValidationError,
+    AlreadyExistError,
+    InvalidDataError,
+    NotFoundError,
+} = require("../customErrors");
+const FileSystem = require("fs");
+const path = require("path");
+
+/**
+ * Controller Action
+ * Create Post
+ *
+ * @param {http POST request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.create_post = async (req, res) => {
+    try {
+        const { title, content, tag } = req.body;
+        const image = req.fileName;
+
+        await ValidatePost({ title, content, image, tag });
+
+        const author = req.user._id;
+
+        const isUserExist = await User.findById({ _id: author });
+        if (!isUserExist) {
+            throw new InvalidDataError("Author does not exists.");
+        }
+
+        const isPostExist = await Post.findOne({ title });
+        if (isPostExist) {
+            throw new AlreadyExistError("Post already exists.");
+        }
+
+        const post = new Post({
+            author,
+            title,
+            content,
+            image,
+            tag,
+        });
+        await post.save();
+        res.status(200).json({ message: "Post created Successfully" });
+    } catch (error) {
+        FileSystem.unlinkSync(
+            path.join(
+                __dirname,
+                "../public/images/" + req.folderName + "/" + req.fileName
+            )
+        );
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (
+            error instanceof ValidationError ||
+            error instanceof AlreadyExistError
+        ) {
+            res.status(422);
+        } else if (error instanceof InvalidDataError) {
+            res.status(404);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
+    }
+};
+
+/**
+ * Controller Action
+ * Get All Posts
+ *
+ * @param {http GET request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.get_all_posts = async (req, res) => {
+    try {
+        const posts = await Post.find().all();
+        if (!posts) {
+            throw new NotFoundError("No posts found.");
+        }
+
+        res.status(200).json({ posts });
+    } catch (error) {
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (error instanceof NotFoundError) {
+            res.status(404);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
+    }
+};
+
+/**
+ * Controller Action
+ * Get Post by ID
+ *
+ * @param {http GET request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.get_post = async (req, res) => {
+    try {
+        const postId = req.params.postId;
+
+        if (!/^[a-z0-9]{24}$/.test(postId)) {
+            throw new ValidationError(
+                `Data validation failed for Post ID, value = ${postId}}`
+            );
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            throw new NotFoundError("Post not found.");
+        }
+
+        res.status(200).json({ post });
+    } catch (error) {
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (error instanceof ValidationError) {
+            res.status(422);
+        } else if (error instanceof NotFoundError) {
+            res.status(404);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
+    }
+};
+
+/**
+ * Controller Action
+ * Update Post
+ *
+ * @param {http POST request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.update_post = async (req, res) => {
+    try {
+        const { _id, title, content, tag } = req.body;
+        const image = req.fileName;
+
+        await ValidatePost({ title, content, image, tag });
+
+        const post = await Post.findById(_id);
+        if (!post) {
+            throw new NotFoundError("Invalid data.");
+        }
+
+        post.title = title;
+        post.content = content;
+        post.image = image;
+        post.tag = tag;
+
+        await post.save();
+        return res.status(200).json({
+            message: "Post updated successfully!",
+        });
+    } catch (error) {
+        FileSystem.unlinkSync(
+            path.join(
+                __dirname,
+                "../public/images/" + req.folderName + "/" + req.fileName
+            )
+        );
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (error instanceof NotFoundError) {
+            res.status(404);
+        } else if (error instanceof ValidationError) {
+            res.status(422);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
+    }
+};
+
+/**
+ * Controller Action
+ * Get all Posts for Logged-in user
+ *
+ * @param {http GET request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.get_self_posts = async (req, res) => {
+    try {
+        const posts = await Post.find({ author: req.user._id });
+        if (posts.length === 0) {
+            throw new NotFoundError("No posts found.");
+        }
+
+        res.status(200).json({ posts });
+    } catch (error) {
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (error instanceof NotFoundError) {
+            res.status(404);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
+    }
+};
+
+/**
+ * Controller Action
+ * Get all Posts for an Author
+ *
+ * @param {http GET request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.get_user_posts = async (req, res) => {
+    try {
+        const posts = await Post.find({ author: req.params.userId });
+        if (posts.length === 0) {
+            throw new NotFoundError("No posts found.");
+        }
+
+        res.status(200).json({ posts });
+    } catch (error) {
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (error instanceof NotFoundError) {
+            res.status(404);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
+    }
+};
+
+/**
+ * Controller Action
+ * Delete Post Action with incomplete logic.
+ * Implement Mongoose Transactions for rollback on error.
+ *
+ * @param {http DELETE request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.delete_author = async (req, res) => {
+    try {
+        const postId = req.params.postId;
+
+        await Post.findByIdAndRemove(postId);
+        let likesCount = await Fan.deleteMany({ post: postId });
+
+        return res.status(200).json({
+            message: `Post and associated ${likesCount} likes deleted successfully`,
+        });
+    } catch (error) {
+        logger.error(error.stack);
+
+        return res.status(500).json({
+            message: "Internal server error, please try again later.",
+        });
+    }
+};
