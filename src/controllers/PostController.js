@@ -270,7 +270,7 @@ exports.get_user_posts = async (req, res) => {
  * @param {JSON} res
  * @returns
  */
-exports.delete_author = async (req, res) => {
+exports.delete_post = async (req, res) => {
     try {
         const postId = req.params.postId;
 

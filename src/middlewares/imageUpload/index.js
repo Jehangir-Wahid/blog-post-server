@@ -6,7 +6,7 @@ var folderName = "";
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        req.folderName = file.fieldname.split("-")[0];
+        req.folderName = file.fieldname.split("_")[0];
         folderName = req.folderName;
         cb(null, path.join(__dirname, "../../public/images/" + req.folderName));
     },

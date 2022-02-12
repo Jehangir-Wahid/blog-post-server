@@ -13,7 +13,7 @@ router.get("/:userId", AuthorController.get_author);
 router.post(
     "/update-author",
     requireAuth,
-    upload.single("author-avatar"),
+    upload.single("author_avatar"),
     AuthorController.update_author
 );
 

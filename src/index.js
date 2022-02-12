@@ -33,6 +33,7 @@ app.use(bodyParser.json());
 app.use(limitRequestesRate);
 app.use(express.static(__dirname + "/public/images"));
 app.use("/public/images", express.static("images"));
+
 app.use("/auth", authRouter);
 app.use("/author", authorRouter);
 app.use("/post", postRouter);

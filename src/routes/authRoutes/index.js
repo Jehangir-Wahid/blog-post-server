@@ -4,7 +4,7 @@ const requireAuth = require("../../middlewares/requireAuth");
 const upload = require("../../middlewares/imageUpload");
 const AuthController = require("../../controllers/AuthController");
 
-router.post("/signup", upload.single("author-avatar"), AuthController.sign_up);
+router.post("/signup", upload.single("author_avatar"), AuthController.sign_up);
 
 router.post("/signin", AuthController.sign_in);
 
