@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const profileSchema = new mongoose.Schema({
-    userId: {
+    authorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     },
@@ -9,7 +9,7 @@ const profileSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    picture: {
+    author_avatar: {
         type: String,
         required: true,
     },

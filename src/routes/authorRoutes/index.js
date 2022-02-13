@@ -8,7 +8,7 @@ router.delete("/delete", requireAuth, AuthorController.delete_author);
 
 router.get("/all", AuthorController.get_all_authors);
 
-router.get("/:userId", AuthorController.get_author);
+router.get("/:authorId", AuthorController.get_author);
 
 router.post(
     "/update-author",

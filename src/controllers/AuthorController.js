@@ -19,11 +19,11 @@ const path = require("path");
  */
 exports.delete_author = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const authorId = req.user._id;
 
-        await User.findByIdAndRemove(userId);
-        await Profile.findOneAndRemove(userId);
-        let postsCount = await Post.deleteMany({ author: userId });
+        await User.findByIdAndRemove(authorId);
+        await Profile.findOneAndRemove(authorId);
+        let postsCount = await Post.deleteMany({ authorId });
 
         return res.status(200).json({
             message: `Account and associated ${postsCount} posts deleted successfully`,
@@ -52,7 +52,7 @@ exports.get_all_authors = async (req, res) => {
             throw new NotFoundError("No authors found.");
         }
 
-        res.status(200).json({ authors });
+        res.status(200).json(authors);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
@@ -78,27 +78,27 @@ exports.get_all_authors = async (req, res) => {
  */
 exports.get_author = async (req, res) => {
     try {
-        const userId = req.params.userId;
+        const authorId = req.params.authorId;
 
-        if (!/^[a-z0-9]{24}$/.test(userId)) {
+        if (!/^[a-z0-9]{24}$/.test(authorId)) {
             throw new ValidationError(
-                `Data validation failed for User ID, value = ${userId}}`
+                `Data validation failed for User ID, value = ${authorId}}`
             );
         }
 
-        const profile = await Profile.findOne({ userId }).lean();
+        const profile = await Profile.findOne({ authorId }).lean();
         if (!profile) {
             throw new NotFoundError("User not found.");
         }
 
-        const user = await User.findById(userId).select({
+        const user = await User.findById(authorId).select({
             _id: 0,
             username: 1,
         });
 
         profile.username = user.username;
 
-        res.status(200).json({ profile });
+        res.status(200).json(profile);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
@@ -127,18 +127,18 @@ exports.get_author = async (req, res) => {
 exports.update_author = async (req, res) => {
     try {
         const { name } = req.body;
-        const picture = req.fileName;
+        const author_avatar = req.fileName;
 
-        await ValidateSignup({ name, picture });
+        await ValidateSignup({ name, author_avatar });
 
-        const userId = req.user._id;
-        const profile = await Profile.findOne({ userId });
+        const authorId = req.user._id;
+        const profile = await Profile.findOne({ authorId });
         if (!profile) {
             throw new NotFoundError("Invalid data.");
         }
 
         profile.name = name;
-        profile.picture = picture;
+        profile.author_avatar = author_avatar;
 
         await profile.save();
         return res.status(200).json({
@@ -179,10 +179,10 @@ exports.liked_posts = async (req, res) => {
     try {
         const fans = await Fan.find({ author: req.user._id }).select({
             _id: 0,
-            post: 1,
+            postId: 1,
         });
         const postIds = fans.map((fan) => {
-            return fan.post;
+            return fan.postId;
         });
         const likedPosts = await Post.find({ _id: { $in: postIds } });
 

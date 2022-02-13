@@ -33,21 +33,24 @@ exports.like_post = async (req, res) => {
             throw new NotFoundError("Post not found.");
         }
 
-        const userId = req.user._id;
+        const authorId = req.user._id;
 
-        const isFanExists = await Fan.findOne({ author: userId, post: postId });
+        const isFanExists = await Fan.findOne({
+            authorId,
+            postId,
+        });
         if (isLike) {
             if (isFanExists) {
                 throw new AlreadyExistError("You've already liked this post.");
             } else {
-                const fan = new Fan({ author: userId, post: postId });
+                const fan = new Fan({ authorId, postId });
                 fan.save();
             }
         } else {
             if (!isFanExists) {
                 throw new NotFoundError("You have'nt liked this post yet.");
             } else {
-                await Fan.findOneAndRemove({ author: userId });
+                await Fan.findOneAndRemove({ authorId });
             }
         }
 
@@ -85,12 +88,12 @@ exports.like_post = async (req, res) => {
  */
 exports.liked_posts = async (req, res) => {
     try {
-        const fans = await Fan.find({ author: req.params.userId }).select({
+        const fans = await Fan.find({ authorId: req.params.authorId }).select({
             _id: 0,
-            post: 1,
+            postId: 1,
         });
         const postIds = fans.map((fan) => {
-            return fan.post;
+            return fan.postId;
         });
         const likedPosts = await Post.find({ _id: { $in: postIds } });
 

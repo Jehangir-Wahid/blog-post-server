@@ -8,6 +8,7 @@ const {
     NotFoundError,
     ValidationError,
     AlreadyExistError,
+    InvalidDataError,
 } = require("../customErrors");
 const FileSystem = require("fs");
 const path = require("path");
@@ -23,11 +24,11 @@ const path = require("path");
  */
 exports.sign_up = async (req, res) => {
     const { username, password, name } = req.body;
-    const picture = req.fileName;
+    const author_avatar = req.fileName;
 
     try {
         await ValidateSignin({ username, password });
-        await ValidateSignup({ name, picture });
+        await ValidateSignup({ name, author_avatar });
 
         const existingUser = await User.findOne({ username });
         if (existingUser) {
@@ -38,15 +39,15 @@ exports.sign_up = async (req, res) => {
         user.save()
             .then((item) => {
                 const profile = new Profile({
-                    userId: item._id,
+                    authorId: item._id,
                     name,
-                    picture,
+                    author_avatar,
                 });
                 profile
                     .save()
                     .then(() => {
                         const token = jwt.sign(
-                            { userId: user._id },
+                            { authorId: user._id },
                             process.env.SECRET_TOKEN
                         );
                         return res.status(200).json({
@@ -139,20 +140,31 @@ exports.sign_in = async (req, res) => {
             throw new NotFoundError("User not found.");
         }
 
-        await user.comparePassword(password);
-        const token = jwt.sign({ userId: user._id }, process.env.SECRET_TOKEN);
-        // res.redirect("/author/")
-        res.status(200).json({
-            token,
-            message: "Successfully Authenticated",
-        });
+        user.comparePassword(password)
+            .then(() => {
+                const token = jwt.sign(
+                    { authorId: user._id },
+                    process.env.SECRET_TOKEN
+                );
+                // res.redirect("/author/")
+                res.status(200).json({
+                    token,
+                    message: "Successfully Authenticated",
+                });
+            })
+            .catch((error) => {
+                return res.status(422).json({ message: error });
+            });
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
 
         if (error instanceof NotFoundError) {
             res.status(404);
-        } else if (error instanceof ValidationError) {
+        } else if (
+            error instanceof ValidationError ||
+            error instanceof InvalidDataError
+        ) {
             res.status(422);
         } else {
             res.status(500);
@@ -201,8 +213,8 @@ exports.update_password = async (req, res) => {
             );
         }
 
-        const userId = req.user._id;
-        const user = await User.findById(userId);
+        const authorId = req.user._id;
+        const user = await User.findById(authorId);
         if (!user) {
             throw new NotFoundError("User not found.");
         }

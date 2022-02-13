@@ -46,7 +46,7 @@ userSchema.methods.comparePassword = function (candidatePassword) {
             }
 
             if (!isMatch) {
-                return reject(false);
+                return reject("Invalid username or password");
             }
 
             resolve(true);

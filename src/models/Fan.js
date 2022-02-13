@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 
 const fanSchema = new mongoose.Schema({
-    author: {
+    authorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     },
-    post: {
+    postId: {
         type: mongoose.Schema.Types.ObjectId,
         required: "Post",
     },

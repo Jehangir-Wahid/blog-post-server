@@ -28,9 +28,9 @@ exports.create_post = async (req, res) => {
 
         await ValidatePost({ title, content, image, tag });
 
-        const author = req.user._id;
+        const authorId = req.user._id;
 
-        const isUserExist = await User.findById({ _id: author });
+        const isUserExist = await User.findById({ _id: authorId });
         if (!isUserExist) {
             throw new InvalidDataError("Author does not exists.");
         }
@@ -41,7 +41,7 @@ exports.create_post = async (req, res) => {
         }
 
         const post = new Post({
-            author,
+            authorId,
             title,
             content,
             image,
@@ -209,7 +209,7 @@ exports.update_post = async (req, res) => {
  */
 exports.get_self_posts = async (req, res) => {
     try {
-        const posts = await Post.find({ author: req.user._id });
+        const posts = await Post.find({ authorId: req.user._id });
         if (posts.length === 0) {
             throw new NotFoundError("No posts found.");
         }
@@ -240,7 +240,7 @@ exports.get_self_posts = async (req, res) => {
  */
 exports.get_user_posts = async (req, res) => {
     try {
-        const posts = await Post.find({ author: req.params.userId });
+        const posts = await Post.find({ authorId: req.params.authorId });
         if (posts.length === 0) {
             throw new NotFoundError("No posts found.");
         }
@@ -275,7 +275,7 @@ exports.delete_post = async (req, res) => {
         const postId = req.params.postId;
 
         await Post.findByIdAndRemove(postId);
-        let likesCount = await Fan.deleteMany({ post: postId });
+        let likesCount = await Fan.deleteMany({ postId });
 
         return res.status(200).json({
             message: `Post and associated ${likesCount} likes deleted successfully`,
@@ -286,5 +286,109 @@ exports.delete_post = async (req, res) => {
         return res.status(500).json({
             message: "Internal server error, please try again later.",
         });
+    }
+};
+
+/**
+ * Controller Action
+ * Like or Unlike a Post
+ *
+ * @param {http POST request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.like_post = async (req, res) => {
+    try {
+        const { postId, isLike } = req.body;
+
+        if (!/^[a-z0-9]{24}$/.test(postId)) {
+            throw new ValidationError(
+                `Data validation failed for Post ID, value = ${postId}}`
+            );
+        }
+
+        const isPostExists = await Post.findOne({ _id: postId });
+        if (!isPostExists) {
+            throw new NotFoundError("Post not found.");
+        }
+
+        const authorId = req.user._id;
+
+        const isFanExists = await Fan.findOne({ authorId, postId });
+        if (isLike) {
+            if (isFanExists) {
+                throw new AlreadyExistError("You've already liked this post.");
+            } else {
+                const fan = new Fan({ authorId, postId });
+                fan.save();
+            }
+        } else {
+            if (!isFanExists) {
+                throw new NotFoundError("You have'nt liked this post yet.");
+            } else {
+                await Fan.findOneAndRemove({ authorId });
+            }
+        }
+
+        res.status(200).json({
+            message:
+                "Post " + (isLike ? "liked" : "unliked") + " successfully!",
+        });
+    } catch (error) {
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (
+            error instanceof ValidationError ||
+            error instanceof AlreadyExistError
+        ) {
+            res.status(422);
+        } else if (error instanceof NotFoundError) {
+            res.status(404);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
+    }
+};
+
+/**
+ * Controller Action
+ * Get Liked-Posts for an Author
+ *
+ * @param {http GET request} req
+ * @param {JSON} res
+ * @returns
+ */
+exports.liked_posts = async (req, res) => {
+    try {
+        const fans = await Fan.find({ authorId: req.params.authorId }).select({
+            _id: 0,
+            post: 1,
+        });
+        const postIds = fans.map((fan) => {
+            return fan.post;
+        });
+        const likedPosts = await Post.find({ _id: { $in: postIds } });
+
+        if (likedPosts.length === 0) {
+            throw new NotFoundError("No posts found.");
+        }
+
+        res.status(200).json({ likedPosts });
+    } catch (error) {
+        let message = error.message;
+        logger.error(error.stack);
+
+        if (error instanceof NotFoundError) {
+            res.status(404);
+        } else {
+            res.status(500);
+            message = "Internal server error, please try again later.";
+        }
+
+        return res.json({ message });
     }
 };

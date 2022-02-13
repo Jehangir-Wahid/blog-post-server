@@ -24,8 +24,12 @@ router.post(
 
 router.get("/self-posts", requireAuth, PostController.get_self_posts);
 
-router.get("/user-posts/:userId", PostController.get_user_posts);
+router.get("/user-posts/:authorId", PostController.get_user_posts);
 
-router.delete("/delete", requireAuth, PostController.delete_post);
+router.delete("/delete/:postId", requireAuth, PostController.delete_post);
+
+router.post("/like-post", requireAuth, PostController.like_post);
+
+router.get("/liked-posts/:authorId", PostController.liked_posts);
 
 module.exports = router;
