@@ -67,6 +67,6 @@ app.get("/", (req, res) => {
     res.send("Welcome");
 });
 
-app.listen(process.env.SERVER_PORT, () => {
-    logger.info(`Listening to port ${process.env.SERVER_PORT}`);
+app.listen(process.env.PORT, () => {
+    logger.info(`Listening to port ${process.env.PORT}`);
 });

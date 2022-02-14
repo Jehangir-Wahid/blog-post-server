@@ -103,6 +103,7 @@ exports.generateAuthorResponse = async (author) => {
 
     const postIds = posts.map((post) => post._id);
     const likedBy = await Fan.find({ postId: { $in: postIds } });
+    author.total_likes = likedBy.length;
 
     var oldValue = 0;
     var newValue = 0;

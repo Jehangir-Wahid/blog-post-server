@@ -55,20 +55,23 @@ exports.sign_up = async (req, res) => {
                         );
                         return res.status(200).json({
                             token,
+                            authorId: user._id,
                             message: "User Signed Up successfully!",
                         });
                     })
                     .catch(async (error) => {
                         logger.error(error.stack);
-                        FileSystem.unlinkSync(
-                            path.join(
-                                __dirname,
-                                "../public/images/" +
-                                    req.folderName +
-                                    "/" +
-                                    req.fileName
-                            )
-                        );
+                        if (req.fileName && req.folderName) {
+                            FileSystem.unlinkSync(
+                                path.join(
+                                    __dirname,
+                                    "../public/images/" +
+                                        req.folderName +
+                                        "/" +
+                                        req.fileName
+                                )
+                            );
+                        }
 
                         await user.deleteOne({ _id: user._id });
                         await profile.deleteOne({ _id: profile._id });
@@ -82,15 +85,17 @@ exports.sign_up = async (req, res) => {
             .catch(async (error) => {
                 logger.error(error.stack);
 
-                FileSystem.unlinkSync(
-                    path.join(
-                        __dirname,
-                        "../public/images/" +
-                            req.folderName +
-                            "/" +
-                            req.fileName
-                    )
-                );
+                if (req.fileName && req.folderName) {
+                    FileSystem.unlinkSync(
+                        path.join(
+                            __dirname,
+                            "../public/images/" +
+                                req.folderName +
+                                "/" +
+                                req.fileName
+                        )
+                    );
+                }
 
                 await user.deleteOne({ _id: user._id });
 
@@ -101,12 +106,14 @@ exports.sign_up = async (req, res) => {
     } catch (error) {
         logger.error(error.stack);
 
-        FileSystem.unlinkSync(
-            path.join(
-                __dirname,
-                "../public/images/" + req.folderName + "/" + req.fileName
-            )
-        );
+        if (req.fileName && req.folderName) {
+            FileSystem.unlinkSync(
+                path.join(
+                    __dirname,
+                    "../public/images/" + req.folderName + "/" + req.fileName
+                )
+            );
+        }
 
         let message = error.message;
 
@@ -152,6 +159,7 @@ exports.sign_in = async (req, res) => {
                 // res.redirect("/author/")
                 res.status(200).json({
                     token,
+                    authorId: user._id,
                     message: "Successfully Authenticated",
                 });
             })
@@ -189,7 +197,7 @@ exports.sign_in = async (req, res) => {
 exports.sign_out = async (req, res) => {
     try {
         req.session.destroy();
-        res.redirect("/");
+        res.status(200).json({ message: "You are Signed out!" });
     } catch (error) {
         logger.error(error.stack);
 
