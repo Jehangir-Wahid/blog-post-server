@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 const logger = require("../helpers/logger");
 const { ValidatePost } = require("../helpers/validations");
+const {
+    generatePostsResponse,
+    generatePostResponse,
+} = require("../helpers/generateResponse");
 const Post = mongoose.model("Post");
 const User = mongoose.model("User");
 const Fan = mongoose.model("Fan");
@@ -12,7 +16,6 @@ const {
 } = require("../customErrors");
 const FileSystem = require("fs");
 const path = require("path");
-
 /**
  * Controller Action
  * Create Post
@@ -24,9 +27,9 @@ const path = require("path");
 exports.create_post = async (req, res) => {
     try {
         const { title, content, tag } = req.body;
-        const image = req.fileName;
+        const post_image = req.body.post_image; // req.fileName;
 
-        await ValidatePost({ title, content, image, tag });
+        await ValidatePost({ title, content, post_image, tag });
 
         const authorId = req.user._id;
 
@@ -44,18 +47,18 @@ exports.create_post = async (req, res) => {
             authorId,
             title,
             content,
-            image,
+            post_image,
             tag,
         });
         await post.save();
         res.status(200).json({ message: "Post created Successfully" });
     } catch (error) {
-        FileSystem.unlinkSync(
-            path.join(
-                __dirname,
-                "../public/images/" + req.folderName + "/" + req.fileName
-            )
-        );
+        // FileSystem.unlinkSync(
+        //     path.join(
+        //         __dirname,
+        //         "../public/images/" + req.folderName + "/" + req.fileName
+        //     )
+        // );
         let message = error.message;
         logger.error(error.stack);
 
@@ -85,12 +88,14 @@ exports.create_post = async (req, res) => {
  */
 exports.get_all_posts = async (req, res) => {
     try {
-        const posts = await Post.find().all();
-        if (!posts) {
+        const posts = await Post.find().all().lean();
+        if (posts.length === 0) {
             throw new NotFoundError("No posts found.");
         }
 
-        res.status(200).json({ posts });
+        const postsData = await generatePostsResponse(posts);
+
+        res.status(200).json(postsData);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
@@ -124,12 +129,14 @@ exports.get_post = async (req, res) => {
             );
         }
 
-        const post = await Post.findById(postId);
+        const post = await Post.findById(postId).lean();
         if (!post) {
             throw new NotFoundError("Post not found.");
         }
 
-        res.status(200).json({ post });
+        const postData = await generatePostResponse(post);
+
+        res.status(200).json(postData);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
@@ -158,9 +165,9 @@ exports.get_post = async (req, res) => {
 exports.update_post = async (req, res) => {
     try {
         const { _id, title, content, tag } = req.body;
-        const image = req.fileName;
+        const post_image = req.fileName;
 
-        await ValidatePost({ title, content, image, tag });
+        await ValidatePost({ title, content, post_image, tag });
 
         const post = await Post.findById(_id);
         if (!post) {
@@ -169,7 +176,7 @@ exports.update_post = async (req, res) => {
 
         post.title = title;
         post.content = content;
-        post.image = image;
+        post.post_image = post_image;
         post.tag = tag;
 
         await post.save();
@@ -209,12 +216,14 @@ exports.update_post = async (req, res) => {
  */
 exports.get_self_posts = async (req, res) => {
     try {
-        const posts = await Post.find({ authorId: req.user._id });
+        const posts = await Post.find({ authorId: req.user._id }).lean();
         if (posts.length === 0) {
             throw new NotFoundError("No posts found.");
         }
 
-        res.status(200).json({ posts });
+        const postsData = await generatePostsResponse(posts);
+
+        res.status(200).json(postsData);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
@@ -240,12 +249,14 @@ exports.get_self_posts = async (req, res) => {
  */
 exports.get_user_posts = async (req, res) => {
     try {
-        const posts = await Post.find({ authorId: req.params.authorId });
+        const posts = await Post.find({ authorId: req.params.authorId }).lean();
         if (posts.length === 0) {
             throw new NotFoundError("No posts found.");
         }
 
-        res.status(200).json({ posts });
+        const postsData = await generatePostsResponse(posts);
+
+        res.status(200).json(postsData);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
@@ -366,18 +377,25 @@ exports.liked_posts = async (req, res) => {
     try {
         const fans = await Fan.find({ authorId: req.params.authorId }).select({
             _id: 0,
-            post: 1,
+            postId: 1,
         });
+
+        if (fans.length === 0) {
+            throw new NotFoundError("No posts found.");
+        }
+
         const postIds = fans.map((fan) => {
-            return fan.post;
+            return fan.postId;
         });
-        const likedPosts = await Post.find({ _id: { $in: postIds } });
+        const likedPosts = await Post.find({ _id: { $in: postIds } }).lean();
 
         if (likedPosts.length === 0) {
             throw new NotFoundError("No posts found.");
         }
 
-        res.status(200).json({ likedPosts });
+        const postsData = await generatePostsResponse(likedPosts);
+
+        res.status(200).json(postsData);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);

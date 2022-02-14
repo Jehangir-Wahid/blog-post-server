@@ -41,7 +41,10 @@ exports.sign_up = async (req, res) => {
                 const profile = new Profile({
                     authorId: item._id,
                     name,
-                    author_avatar,
+                    author_avatar:
+                        process.env.HOST_URL +
+                        "/images/author/" +
+                        author_avatar,
                 });
                 profile
                     .save()

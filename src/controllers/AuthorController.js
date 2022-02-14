@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 const logger = require("../helpers/logger");
+const {
+    generateAuthorsResponse,
+    generateAuthorResponse,
+} = require("../helpers/generateResponse");
 const User = mongoose.model("User");
 const Profile = mongoose.model("Profile");
 const Post = mongoose.model("Post");
@@ -47,12 +51,14 @@ exports.delete_author = async (req, res) => {
  */
 exports.get_all_authors = async (req, res) => {
     try {
-        const authors = await Profile.find().all();
+        const authors = await Profile.find().all().lean();
         if (!authors) {
             throw new NotFoundError("No authors found.");
         }
 
-        res.status(200).json(authors);
+        const authorsData = await generateAuthorsResponse(authors);
+
+        res.status(200).json(authorsData);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
@@ -82,23 +88,18 @@ exports.get_author = async (req, res) => {
 
         if (!/^[a-z0-9]{24}$/.test(authorId)) {
             throw new ValidationError(
-                `Data validation failed for User ID, value = ${authorId}}`
+                `Data validation failed for User ID, value = ${authorId}`
             );
         }
 
-        const profile = await Profile.findOne({ authorId }).lean();
-        if (!profile) {
-            throw new NotFoundError("User not found.");
+        const author = await Profile.findOne({ authorId }).lean();
+        if (!author) {
+            throw new NotFoundError("Author not found.");
         }
 
-        const user = await User.findById(authorId).select({
-            _id: 0,
-            username: 1,
-        });
+        const authorData = await generateAuthorResponse(author);
 
-        profile.username = user.username;
-
-        res.status(200).json(profile);
+        res.status(200).json(authorData);
     } catch (error) {
         let message = error.message;
         logger.error(error.stack);
