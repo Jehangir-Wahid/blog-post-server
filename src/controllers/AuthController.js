@@ -222,10 +222,10 @@ exports.sign_out = async (req, res) => {
  */
 exports.update_password = async (req, res) => {
     try {
-        const { password } = req.body;
-        if (!/^[a-zA-Z0-9\.\_\!\@\#\$\%\&\*\']{8,30}$/.test(password)) {
+        const { currentPassword, newPassword } = req.body;
+        if (!/^[a-zA-Z0-9\.\_\!\@\#\$\%\&\*\']{8,30}$/.test(newPassword)) {
             throw new ValidationError(
-                `Data validation failed for Password, value = ${password}}`
+                `Data validation failed for Password, value = ${newPassword}}`
             );
         }
 
@@ -235,7 +235,12 @@ exports.update_password = async (req, res) => {
             throw new NotFoundError("User not found.");
         }
 
-        user.password = password;
+        const comparePassword = await user.comparePassword(currentPassword);
+        if (!comparePassword) {
+            throw new InvalidDataError("Invalid current password");
+        }
+
+        user.password = newPassword;
 
         await user.save();
         return res.status(200).json({

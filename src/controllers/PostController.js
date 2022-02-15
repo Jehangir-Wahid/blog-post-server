@@ -27,7 +27,7 @@ const path = require("path");
 exports.create_post = async (req, res) => {
     try {
         const { title, content, tag } = req.body;
-        const post_image = req.body.post_image; // req.fileName;
+        const post_image = req.fileName;
 
         await ValidatePost({ title, content, post_image, tag });
 
@@ -47,18 +47,20 @@ exports.create_post = async (req, res) => {
             authorId,
             title,
             content,
-            post_image,
+            post_image: process.env.HOST_URL + "/images/post/" + post_image,
             tag,
         });
         await post.save();
         res.status(200).json({ message: "Post created Successfully" });
     } catch (error) {
-        // FileSystem.unlinkSync(
-        //     path.join(
-        //         __dirname,
-        //         "../public/images/" + req.folderName + "/" + req.fileName
-        //     )
-        // );
+        if (req.fileName && req.folderName) {
+            FileSystem.unlinkSync(
+                path.join(
+                    __dirname,
+                    "../public/images/" + req.folderName + "/" + req.fileName
+                )
+            );
+        }
         let message = error.message;
         logger.error(error.stack);
 

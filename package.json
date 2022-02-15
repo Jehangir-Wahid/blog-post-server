@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "seed-users": "node src/seeders/userSeeder.js",
+    "seed-posts": "node src/seeders/postSeeder.js",
+    "seed-likes": "node src/seeders/likeSeeder.js"
   },
   "keywords": [],
   "author": "",
@@ -24,5 +27,8 @@
     "nodemon": "^2.0.15",
     "uuid": "^8.3.2",
     "winston": "^3.5.1"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^6.0.0-alpha.6"
   }
 }

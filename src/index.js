@@ -13,6 +13,7 @@ const authorRouter = require("./routes/authorRoutes");
 const postRouter = require("./routes/postRoutes");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const fakerRouter = require("./routes/faker");
 
 dotenv.config();
 const app = express();
@@ -48,6 +49,8 @@ app.use("/images", express.static("images"));
 app.use("/auth", authRouter);
 app.use("/author", authorRouter);
 app.use("/post", postRouter);
+
+app.use("/generator", fakerRouter);
 
 const mongoDb = process.env.CONNECTION_STRING;
 mongoose.connect(mongoDb, {
