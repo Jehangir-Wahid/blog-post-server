@@ -223,7 +223,7 @@ exports.sign_out = async (req, res) => {
 exports.update_password = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
-        if (!/^[a-zA-Z0-9\.\_\!\@\#\$\%\&\*\']{8,30}$/.test(newPassword)) {
+        if (!/^[a-zA-Z0-9\.\_\!\@\#\$\%\&\*\']{5,30}$/.test(newPassword)) {
             throw new ValidationError(
                 `Data validation failed for Password, value = ${newPassword}}`
             );
