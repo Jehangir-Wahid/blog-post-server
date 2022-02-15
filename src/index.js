@@ -53,10 +53,13 @@ app.use("/post", postRouter);
 // app.use("/generator", fakerRouter);
 
 const mongoDb = process.env.CONNECTION_STRING;
-mongoose.connect(mongoDb, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+mongoose.connect(
+    "mongodb+srv://blogpost:BlogPost@cluster0.larze.mongodb.net/blogPosts?retryWrites=true&w=majority",
+    {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    }
+);
 
 mongoose.connection.on("connected", () => {
     logger.info("connected to mongodb instance");
