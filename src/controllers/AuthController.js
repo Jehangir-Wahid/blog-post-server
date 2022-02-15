@@ -56,6 +56,8 @@ exports.sign_up = async (req, res) => {
                         return res.status(200).json({
                             token,
                             authorId: user._id,
+                            name: profile.name,
+                            author_avatar: profile.author_avatar,
                             message: "User Signed Up successfully!",
                         });
                     })
@@ -151,15 +153,18 @@ exports.sign_in = async (req, res) => {
         }
 
         user.comparePassword(password)
-            .then(() => {
+            .then(async () => {
                 const token = jwt.sign(
                     { authorId: user._id },
                     process.env.SECRET_TOKEN
                 );
+                const profile = await Profile.findOne({ authorId: user._id });
                 // res.redirect("/author/")
                 res.status(200).json({
                     token,
                     authorId: user._id,
+                    name: profile.name,
+                    author_avatar: profile.author_avatar,
                     message: "Successfully Authenticated",
                 });
             })

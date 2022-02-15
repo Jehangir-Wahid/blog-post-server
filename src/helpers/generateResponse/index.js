@@ -114,6 +114,7 @@ exports.generateAuthorResponse = async (author) => {
         if (newValue > oldValue) {
             author.popular_post_id = post._id;
             author.popular_post_name = post.title;
+            author.popular_post_likes = newValue;
         }
     });
 
