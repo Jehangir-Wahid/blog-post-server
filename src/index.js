@@ -52,8 +52,10 @@ app.use("/post", postRouter);
 
 app.use("/generator", fakerRouter);
 
-const mongoDb = process.env.CONNECTION_STRING;
-mongoose.connect(mongoDb, {
+// const mongoDb = process.env.CONNECTION_STRING;
+const cloudConnectionString = process.env.CLOUD_CONNECTION_STRING;
+
+mongoose.connect(`${cloudConnectionString}`, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
