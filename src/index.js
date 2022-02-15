@@ -54,7 +54,7 @@ app.use("/generator", fakerRouter);
 
 const mongoDb = process.env.CONNECTION_STRING;
 mongoose.connect(
-    "mongodb+srv://blogpost:BlogPost@cluster0.larze.mongodb.net/blogPosts?retryWrites=true&w=majority",
+    mongoDb,
     {
         useNewUrlParser: true,
         useUnifiedTopology: true,
