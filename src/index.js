@@ -50,7 +50,7 @@ app.use("/auth", authRouter);
 app.use("/author", authorRouter);
 app.use("/post", postRouter);
 
-app.use("/generator", fakerRouter);
+// app.use("/generator", fakerRouter);
 
 const mongoDb = process.env.CONNECTION_STRING;
 mongoose.connect(mongoDb, {
