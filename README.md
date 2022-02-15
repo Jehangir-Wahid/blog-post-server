@@ -1,6 +1,6 @@
 # Node JS API Server for Blog-Post app
 
-#### Server Dependencies
+### Server Dependencies
 
 -   Node: v16.13.2
 -   MongoDB shell: v4.4.10
@@ -18,3 +18,12 @@ Tested on a Ubuntu 20.10 server
 
 -   Run `npm run dev` command to start the server.
 -   Test [localhost:3001](http://localhost:3001/) in your browser and a blank page with **Welcome** text will be loaded.
+
+### Seeding the Database with Dummy Data
+
+The following API's are for **seeding** the database.
+Please hit the API's in the **given order**.
+
+-   **First** `localhost:3001/generator/users`
+-   **Second** `localhost:3001/generator/posts`
+-   **Third** `localhost:3001/generator/likes`
