@@ -13,7 +13,7 @@ const authorRouter = require("./routes/authorRoutes");
 const postRouter = require("./routes/postRoutes");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const fakerRouter = require("./routes/faker");
+// const fakerRouter = require("./routes/faker");
 
 dotenv.config();
 const app = express();
